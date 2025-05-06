@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản trị - Tin Tức Thể Thao Việt Nam</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .admin-container { padding: 2rem; }
+        .admin-section { margin-bottom: 2rem; }
+        .admin-section h2 { font-size: 1.5rem; margin-bottom: 1rem; color: #1a2f5a; }
+        .admin-table { width: 100%; border-collapse: collapse; }
+        .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .admin-table th { background: #1a2f5a; color: white; }
+        .admin-form { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .admin-form label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        .admin-form input, .admin-form select, .admin-form textarea { width: 100%; padding: 8px; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 4px; }
+        .admin-form button { background: #ff5722; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        .admin-form button:hover { background: #e64a19; }
+        .flash-messages { margin-bottom: 1rem; }
+        .flash-messages .success { color: green; }
+        .flash-messages .error { color: red; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <h1><i class="fas fa-running"></i> Quản trị - Tin Tức Thể Thao</h1>
+            <a href="{{ url_for('admin_logout') }}" class="read-more">Đăng xuất <i class="fas fa-sign-out-alt"></i></a>
+        </div>
+    </header>
+    
+    <div class="container admin-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <p class="{{ category }}">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        {% if action == 'add_article' or action == 'edit_article' %}
+            <div class="admin-section">
+                <h2>{{ 'Thêm bài viết' if action == 'add_article' else 'Sửa bài viết' }}</h2>
+                <form class="admin-form" method="POST" action="{{ url_for('add_article') if action == 'add_article' else url_for('edit_article', article_id=article.id) }}">
+                    <label>Tiêu đề</label>
+                    <input type="text" name="title" value="{{ article.title if article else '' }}" required>
+                    <label>Liên kết</label>
+                    <input type="text" name="link" value="{{ article.link if article else '' }}" required>
+                    <label>Mô tả</label>
+                    <textarea name="description" required>{{ article.description if article else '' }}</textarea>
+                    <label>Hình ảnh</label>
+                    <input type="text" name="image" value="{{ article.image if article else '' }}" required>
+                    <label>Ngày đăng</label>
+                    <input type="text" name="pub_date" value="{{ article.pub_date if article else '' }}" placeholder="DD/MM/YYYY">
+                    <label>Nguồn</label>
+                    <input type="text" name="source" value="{{ article.source if article else '' }}" required>
+                    <label>Nội dung</label>
+                    <textarea name="content" required>{{ article.content if article else '' }}</textarea>
+                    <label>Danh mục</label>
+                    <select name="category" required>
+                        <option value="football" {% if article and article.category == 'football' %}selected{% endif %}>Bóng đá</option>
+                        <option value="basketball" {% if article and article.category == 'basketball' %}selected{% endif %}>Bóng rổ</option>
+                        <option value="other" {% if article and article.category == 'other' %}selected{% endif %}>Thể thao khác</option>
+                        <option value="international" {% if article and article.category == 'international' %}selected{% endif %}>Quốc tế</option>
+                    </select>
+                    <button type="submit">{{ 'Thêm' if action == 'add_article' else 'Lưu' }}</button>
+                </form>
+            </div>
+        {% elif action == 'seo_config' %}
+            <div class="admin-section">
+                <h2>Cài đặt SEO</h2>
+                <form class="admin-form" method="POST" action="{{ url_for('update_seo_config') }}">
+                    <label>Từ khóa (phân cách bằng dấu phẩy)</label>
+                    <input type="text" name="keywords" value="{{ ', '.join(seo_config.keywords) }}" required>
+                    <label>Độ dài tiêu đề (tối thiểu)</label>
+                    <input type="number" name="title_min" value="{{ seo_config.title_length.min }}" required>
+                    <label>Độ dài tiêu đề (tối đa)</label>
+                    <input type="number" name="title_max" value="{{ seo_config.title_length.max }}" required>
+                    <label>Độ dài mô tả (tối thiểu)</label>
+                    <input type="number" name="description_min" value="{{ seo_config.description_length.min }}" required>
+                    <label>Độ dài mô tả (tối đa)</label>
+                    <input type="number" name="description_max" value="{{ seo_config.description_length.max }}" required>
+                    <label>Thêm tiêu đề phụ (H2, H3)</label>
+                    <input type="checkbox" name="content_headings" {% if seo_config.content_headings %}checked{% endif %}>
+                    <label>Mật độ từ khóa (%)</label>
+                    <input type="number" step="0.01" name="keyword_density" value="{{ seo_config.keyword_density }}" required>
+                    <button type="submit">Lưu</button>
+                </form>
+            </div>
+        {% else %}
+            <div class="admin-section">
+                <h2>Quản lý bài viết</h2>
+                <a href="{{ url_for('add_article') }}" class="read-more">Thêm bài viết mới <i class="fas fa-plus"></i></a>
+                <table class="admin-table">
+                    <tr>
+                        <th>Tiêu đề</th>
+                        <th>Danh mục</th>
+                        <th>Nguồn</th>
+                        <th>Ngày đăng</th>
+                        <th>Hành động</th>
+                    </tr>
+                    {% for article in articles %}
+                    <tr>
+                        <td>{{ article.title }}</td>
+                        <td>{{ article.category }}</td>
+                        <td>{{ article.source }}</td>
+                        <td>{{ article.pub_date }}</td>
+                        <td>
+                            <a href="{{ url_for('edit_article', article_id=article.id) }}">Sửa</a> |
+                            <a href="{{ url_for('delete_article', article_id=article.id) }}" onclick="return confirm('Bạn có chắc muốn xóa?')">Xóa</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            
+            <div class="admin-section">
+                <h2>Quản lý nguồn RSS</h2>
+                <form class="admin-form" method="POST" action="{{ url_for('add_rss_feed') }}">
+                    <label>URL nguồn RSS</label>
+                    <input type="text" name="rss_url" required>
+                    <button type="submit">Thêm</button>
+                </form>
+                <table class="admin-table">
+                    <tr>
+                        <th>URL</th>
+                        <th>Hành động</th>
+                    </tr>
+                    {% for feed in rss_feeds %}
+                    <tr>
+                        <td>{{ feed }}</td>
+                        <td>
+                            <a href="{{ url_for('delete_rss_feed', rss_url=feed) }}" onclick="return confirm('Bạn có chắc muốn xóa?')">Xóa</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            
+            <div class="admin-section">
+                <h2>Cài đặt SEO</h2>
+                <a href="{{ url_for('update_seo_config') }}" class="read-more">Chỉnh sửa cài đặt SEO <i class="fas fa-cog"></i></a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h3>Về chúng tôi</h3>
+                <p>Trang tin tức thể thao cập nhật nhanh chóng và chính xác nhất.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Liên hệ</h3>
+                <p><i class="fas fa-envelope"></i> Email: contact@sportsnews.vn</p>
+                <p><i class="fas fa-phone"></i> Điện thoại: 0123 456 789</p>
+            </div>
+            <div class="footer-section">
+                <h3>Theo dõi</h3>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2023 Tin Tức Thể Thao Việt Nam. Tất cả các quyền được bảo lưu.</p>
+        </div>
+    </footer>
+</body>
+</html>
