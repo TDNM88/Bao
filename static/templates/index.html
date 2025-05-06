@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tin Tức Thể Thao</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Tin Tức Thể Thao</h1>
+    </header>
+    
+    <section class="featured">
+        <h2>Tin Tiêu Điểm</h2>
+        {% for article in featured %}
+        <div class="article featured-article">
+            <img src="{{ article.image }}" alt="{{ article.title }}">
+            <div class="content">
+                <h3><a href="{{ article.link }}" target="_blank">{{ article.title }}</a></h3>
+                <p>{{ article.description }}</p>
+                <span>Nguồn: {{ article.source }} | {{ article.pub_date }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </section>
+    
+    <section class="articles">
+        <h2>Tin Mới Nhất</h2>
+        <div class="article-grid">
+            {% for article in articles %}
+            <div class="article">
+                <img src="{{ article.image }}" alt="{{ article.title }}">
+                <h3><a href="{{ article.link }}" target="_blank">{{ article.title }}</a></h3>
+                <p>{{ article.description }}</p>
+                <span>Nguồn: {{ article.source }} | {{ article.pub_date }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</body>
+</html>
